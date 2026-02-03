@@ -1,0 +1,20 @@
+name: reusable-pr-gate
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/dependency-review-action@v4
+        with:
+          deny-licenses: |
+            SSPL-1.0
+            AGPL-3.0-only
+            AGPL-3.0-or-later
+          comment-summary-in-pr: true

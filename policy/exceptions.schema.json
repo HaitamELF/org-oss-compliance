@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["purl", "license", "expires", "owner", "ticket", "justification"],
+        "properties": {
+          "purl": {"type": "string"},
+          "license": {"type": "string"},
+          "expires": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+          "owner": {"type": "string"},
+          "ticket": {"type": "string"},
+          "justification": {"type": "string"}
+        }
+      }
+    }
+  },
+  "required": ["exceptions"]
+}
