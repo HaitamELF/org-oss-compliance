@@ -31,13 +31,18 @@ jobs:
           name: sbom
           path: sbom-repo.json
 
+      - name: Checkout compliance repo
+        uses: actions/checkout@v4
+        with:
+          repository: HaitamELF/org-oss-compliance
+          path: compliance
+
       - name: Check forbidden licenses (SSPL/AGPL) + exceptions
         run: |
-          python3 -V
-          python3 "${GITHUB_ACTION_PATH}/../../scripts/check_licenses.py"
+          python3 compliance/scripts/check_licenses.py
         env:
-          DENYLIST_FILE: "${GITHUB_ACTION_PATH}/../../policy/licenses-denylist.txt"
-          EXCEPTIONS_FILE: ".compliance/exceptions.json"
+          DENYLIST_FILE: compliance/policy/licenses-denylist.txt
+          EXCEPTIONS_FILE: .compliance/exceptions.json
 
       - name: Upload forbidden report
         if: failure()
