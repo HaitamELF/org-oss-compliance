@@ -17,6 +17,60 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare dependency caches inside workspace
+        run: |
+         mkdir -p .cache/m2 .cache/nuget .cache/gomod .cache/
+         
+      - name: Node install (npm ci) for all package-lock.json
+        if: hashFiles('**/package-lock.json') != ''
+        run: |
+         for d in $(dirname $(git ls-files '**/package-lock.json' | sort -u)); do
+          echo "npm ci in $d"
+          (cd "$d" && npm ci)
+         done
+
+         # ---- Python ----
+      - name: Python install (pip) for all requirements.txt
+        if: hashFiles('**/requirements.txt') != ''
+        run: |
+         python3 -m pip install --upgrade pip
+         for f in $(git ls-files '**/requirements.txt'); do
+          dir=$(dirname "$f")
+          echo "pip install -r in $dir"
+          python3 -m pip install --cache-dir .cache/pip -r "$f"
+         done
+
+      - name: .NET restore (local nuget cache)
+        if: |
+         hashFiles('**/*.csproj') != '' ||
+         hashFiles('**/*.sln') != ''
+        run: |
+         export NUGET_PACKAGES="$PWD/.cache/nuget"
+         for p in $(git ls-files '**/*.csproj' | sort -u); do
+          echo "dotnet restore $p"
+          dotnet restore "$p"
+         done
+
+      - name: Go mod download (local module cache)
+        if: hashFiles('**/go.mod') != ''
+        run: |
+         export GOMODCACHE="$PWD/.cache/gomod"
+         for m in $(git ls-files '**/go.mod' | sort -u); do
+          dir=$(dirname "$m")
+          echo "go mod download in $dir"
+          (cd "$dir" && go mod download)
+         done
+
+      # ---- Maven ----
+      - name: Maven go-offline (local m2 repo)
+        if: hashFiles('**/pom.xml') != ''
+        run: |
+         for p in $(git ls-files '**/pom.xml' | sort -u); do
+          dir=$(dirname "$p")
+          echo "mvn dependency:go-offline in $dir"
+          (cd "$dir" && mvn -q -Dmaven.repo.local="$PWD/../.cache/m2" -DskipTests dependency:go-offline)
+         done
+
       # Génère un SBOM repo-wide (polyglot) via Syft (très robuste)
       - name: Generate SBOM (CycloneDX JSON)
         uses: anchore/sbom-action@v0
